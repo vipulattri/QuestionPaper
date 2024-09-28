@@ -63,8 +63,8 @@
     <div id="output"></div>
 
     <script>
-        let CLIENT_ID = '967255097428-pc7hj9vrphsc8u98qnj24orqe0pjh0qm.apps.googleusercontent.com';
-        let API_KEY = 'AIzaSyBFNwjTcUDKK_ARkl29dzyikT-YytT-9EU';
+        let CLIENT_ID = '967255097428-pc7hj9vrphsc8u98qnj24orqe0pjh0qm.apps.googleusercontent.com';  // Replace this with your correct Client ID
+        let API_KEY = 'AIzaSyBFNwjTcUDKK_ARkl29dzyikT-YytT-9EU';  // Your newly created API Key
         let DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
         let SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
@@ -104,7 +104,9 @@
         function authenticateUser() {
             const authInstance = gapi.auth2.getAuthInstance();
             if (!authInstance.isSignedIn.get()) {
-                return authInstance.signIn().catch(function (error) {
+                return authInstance.signIn().then(function() {
+                    console.log("User signed in successfully.");
+                }).catch(function (error) {
                     console.error("Authentication failed:", error);
                     alert("Authentication failed. Please sign in again.");
                 });
@@ -169,6 +171,7 @@
             .catch(function (error) {
                 document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
                 console.error('Error uploading file:', error);
+                alert('Error uploading file. Please try again.');
             });
         }
 
@@ -188,6 +191,9 @@
                     const link = response.result.webViewLink;
                     displayOutput(link);
                 });
+            }).catch(function (error) {
+                console.error("Error creating shareable link:", error);
+                alert("Error creating shareable link. Please try again.");
             });
         }
 
