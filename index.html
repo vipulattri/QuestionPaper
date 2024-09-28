@@ -33,6 +33,15 @@
         .form-container button:hover {
             background-color: #218838;
         }
+        #loadingIndicator {
+            display: none;
+            font-size: 16px;
+            color: #007bff;
+            margin-top: 20px;
+        }
+        #output {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -45,10 +54,13 @@
         <input type="file" id="fileInput" accept="application/pdf">
         <input type="text" id="name" placeholder="Enter your name">
         <textarea id="description" rows="4" placeholder="Enter a description of the question paper"></textarea>
-        <button id="uploadButton">Upload and Share</button>
+        <button id="uploadButton" onclick="handleFileUpload()">Upload and Share</button>
     </div>
 
-    <div id="output" style="margin-top: 20px;"></div>
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator">One moment please...</div>
+
+    <div id="output"></div>
 
     <script>
         let CLIENT_ID = '967255097428-pc7hj9vrphsc8u98qnj24orqe0pjh0qm.apps.googleusercontent.com';
@@ -56,42 +68,56 @@
         let DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
         let SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
+        // Load the API client and auth2 library
         function handleClientLoad() {
+            document.getElementById('loadingIndicator').style.display = 'block'; // Show loading message
             gapi.load('client:auth2', initClient);
         }
 
-       function initClient() {
-    gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        discoveryDocs: DISCOVERY_DOCS,
-        scope: SCOPES
-    }).then(function () {
-        console.log("Google API initialized.");
-        // Listen for sign-in state changes.
-        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSignInStatus);
-        // Handle the initial sign-in state.
-        updateSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-    }, function (error) {
-        console.error("Error loading Google API", error);
-    });
-}
-
-function updateSignInStatus(isSignedIn) {
-    if (!isSignedIn) {
-        alert('You have been signed out. Please sign in again to continue.');
-        authenticateUser();
-    }
-}
-
-        function authenticateUser() {
-            return gapi.auth2.getAuthInstance().signIn();
+        // Initialize the Google API client and handle errors
+        function initClient() {
+            gapi.client.init({
+                apiKey: API_KEY,
+                clientId: CLIENT_ID,
+                discoveryDocs: DISCOVERY_DOCS,
+                scope: SCOPES
+            }).then(function () {
+                document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
+                console.log("Google API initialized.");
+                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSignInStatus);
+                updateSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+            }, function (error) {
+                document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
+                console.error("Error initializing Google API", error);
+                alert("Error initializing Google API. Please try again.");
+            });
         }
 
+        // Update sign-in status
+        function updateSignInStatus(isSignedIn) {
+            if (!isSignedIn) {
+                authenticateUser();
+            }
+        }
+
+        // Authenticate the user
+        function authenticateUser() {
+            const authInstance = gapi.auth2.getAuthInstance();
+            if (!authInstance.isSignedIn.get()) {
+                return authInstance.signIn().catch(function (error) {
+                    console.error("Authentication failed:", error);
+                    alert("Authentication failed. Please sign in again.");
+                });
+            }
+            return Promise.resolve();
+        }
+
+        // Load the Google Drive API
         function loadDriveAPI() {
             return gapi.client.load('drive', 'v3');
         }
 
+        // Handle the file upload process
         function handleFileUpload() {
             let fileInput = document.getElementById('fileInput');
             let file = fileInput.files[0];
@@ -101,13 +127,25 @@ function updateSignInStatus(isSignedIn) {
                 return;
             }
 
+            document.getElementById('loadingIndicator').style.display = 'block'; // Show loading message
+
+            console.log('Starting authentication...');
             authenticateUser().then(function() {
+                console.log('Authentication successful, loading Drive API...');
                 loadDriveAPI().then(function() {
+                    console.log('Drive API loaded, uploading file...');
                     uploadFileToDrive(file);
+                }).catch(function (error) {
+                    console.error('Error loading Drive API:', error);
+                    document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
                 });
+            }).catch(function (error) {
+                console.error('Error during authentication:', error);
+                document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
             });
         }
 
+        // Upload the file to Google Drive
         function uploadFileToDrive(file) {
             const metadata = {
                 'name': file.name,
@@ -125,13 +163,16 @@ function updateSignInStatus(isSignedIn) {
                 body: form,
             }).then((res) => res.json())
             .then(function (file) {
+                console.log('File uploaded successfully, creating shareable link...');
                 createShareableLink(file.id);
             })
             .catch(function (error) {
+                document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
                 console.error('Error uploading file:', error);
             });
         }
 
+        // Create a shareable link for the uploaded file
         function createShareableLink(fileId) {
             gapi.client.drive.permissions.create({
                 fileId: fileId,
@@ -150,12 +191,14 @@ function updateSignInStatus(isSignedIn) {
             });
         }
 
+        // Display the output with a link to the uploaded file
         function displayOutput(link) {
+            document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
             const outputDiv = document.getElementById('output');
             outputDiv.innerHTML = `<p>File successfully uploaded. <a href="${link}" target="_blank">View your file here</a></p>`;
         }
 
-        document.getElementById('uploadButton').addEventListener('click', handleFileUpload);
+        // Initialize the API client when the DOM is ready
         document.addEventListener('DOMContentLoaded', handleClientLoad);
     </script>
 
