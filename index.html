@@ -61,151 +61,152 @@
 
     <div id="output"></div>
 
-    <script>
-        let CLIENT_ID = '967255097428-pc7hj9vrphsc8u98qnj24orqe0pjh0qm.apps.googleusercontent.com';  // Replace this with your correct Client ID
-        let API_KEY = 'AIzaSyBFNwjTcUDKK_ARkl29dzyikT-YytT-9EU';  // Your newly created API Key
-        let DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
-        let SCOPES = 'https://www.googleapis.com/auth/drive.file';
+  <script>
+    let CLIENT_ID = 'YOUR_CLIENT_ID';  // Replace this with your correct Client ID
+    let API_KEY = 'YOUR_API_KEY';  // Your newly created API Key
+    let DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
+    let SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-        // Load the API client and auth2 library
-        function handleClientLoad() {
-            document.getElementById('loadingIndicator').style.display = 'block'; // Show loading message
-            gapi.load('client:auth2', initClient);
-        }
+    // Load the API client and auth2 library
+    function handleClientLoad() {
+        document.getElementById('loadingIndicator').style.display = 'block'; // Show loading message
+        gapi.load('client:auth2', initClient);
+    }
 
-        // Initialize the Google API client and handle errors
-        function initClient() {
-            gapi.client.init({
-                Key: API_KEY,
-                clientId: CLIENT_ID,
-                discoveryDocs: DISCOVERY_DOCS,
-                scope: SCOPES
-            }).then(function () {
-                document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
-                console.log("Google API initialized.");
-                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSignInStatus);
-                updateSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-            }, function (error) {
-                document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
-                console.error("Error initializing Google API", error);
-                alert("Error initializing Google API. Please try again.");
-            });
-        }
-
-        // Update sign-in status
-        function updateSignInStatus(isSignedIn) {
-            if (!isSignedIn) {
-                authenticateUser();
-            }
-        }
-
-        // Authenticate the user
-        function authenticateUser() {
-            const authInstance = gapi.auth2.getAuthInstance();
-            if (!authInstance.isSignedIn.get()) {
-                return authInstance.signIn().then(function() {
-                    console.log("User signed in successfully.");
-                }).catch(function (error) {
-                    console.error("Authentication failed:", error);
-                    alert("Authentication failed. Please sign in again.");
-                });
-            }
-            return Promise.resolve();
-        }
-
-        // Load the Google Drive API
-        function loadDriveAPI() {
-            return gapi.client.load('drive', 'v3');
-        }
-
-        // Handle the file upload process
-        function handleFileUpload() {
-            let fileInput = document.getElementById('fileInput');
-            let file = fileInput.files[0];
-
-            if (!file) {
-                alert('Please select a file to upload');
-                return;
-            }
-
-            document.getElementById('loadingIndicator').style.display = 'block'; // Show loading message
-
-            console.log('Starting authentication...');
-            authenticateUser().then(function() {
-                console.log('Authentication successful, loading Drive API...');
-                loadDriveAPI().then(function() {
-                    console.log('Drive API loaded, uploading file...');
-                    uploadFileToDrive(file);
-                }).catch(function (error) {
-                    console.error('Error loading Drive API:', error);
-                    document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
-                });
-            }).catch(function (error) {
-                console.error('Error during authentication:', error);
-                document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
-            });
-        }
-
-        // Upload the file to Google Drive
-        function uploadFileToDrive(file) {
-            const metadata = {
-                'name': file.name,
-                'mimeType': file.type,
-            };
-
-            const accessToken = gapi.auth.getToken().access_token;
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', file);
-
-            fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-                body: form,
-            }).then((res) => res.json())
-            .then(function (file) {
-                console.log('File uploaded successfully, creating shareable link...');
-                createShareableLink(file.id);
-            })
-            .catch(function (error) {
-                document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
-                console.error('Error uploading file:', error);
-                alert('Error uploading file. Please try again.');
-            });
-        }
-
-        // Create a shareable link for the uploaded file
-        function createShareableLink(fileId) {
-            gapi.client.drive.permissions.create({
-                fileId: fileId,
-                resource: {
-                    role: 'reader',
-                    type: 'anyone',
-                }
-            }).then(function () {
-                gapi.client.drive.files.get({
-                    fileId: fileId,
-                    fields: 'webViewLink, webContentLink'
-                }).then(function (response) {
-                    const link = response.result.webViewLink;
-                    displayOutput(link);
-                });
-            }).catch(function (error) {
-                console.error("Error creating shareable link:", error);
-                alert("Error creating shareable link. Please try again.");
-            });
-        }
-
-        // Display the output with a link to the uploaded file
-        function displayOutput(link) {
+    // Initialize the Google API client and handle errors
+    function initClient() {
+        gapi.client.init({
+            apiKey: API_KEY,
+            clientId: CLIENT_ID,
+            discoveryDocs: DISCOVERY_DOCS,
+            scope: SCOPES
+        }).then(function () {
             document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
-            const outputDiv = document.getElementById('output');
-            outputDiv.innerHTML = `<p>File successfully uploaded. <a href="${link}" target="_blank">View your file here</a></p>`;
+            gapi.auth2.getAuthInstance().isSignedIn.listen(updateSignInStatus);
+            updateSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+        }, function (error) {
+            document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
+            console.error("Error initializing Google API", error);
+            alert("Error initializing Google API. Please try again.");
+        });
+    }
+
+    // Update sign-in status
+    function updateSignInStatus(isSignedIn) {
+        if (!isSignedIn) {
+            authenticateUser();
+        }
+    }
+
+    // Authenticate the user
+    function authenticateUser() {
+        const authInstance = gapi.auth2.getAuthInstance();
+        if (!authInstance.isSignedIn.get()) {
+            return authInstance.signIn().then(function() {
+                console.log("User signed in successfully.");
+            }).catch(function (error) {
+                console.error("Authentication failed:", error);
+                alert("Authentication failed. Please sign in again.");
+            });
+        }
+        return Promise.resolve();
+    }
+
+    // Load the Google Drive API
+    function loadDriveAPI() {
+        return gapi.client.load('drive', 'v3');
+    }
+
+    // Handle the file upload process
+    function handleFileUpload() {
+        let fileInput = document.getElementById('fileInput');
+        let file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a file to upload');
+            return;
         }
 
-        // Initialize the API client when the DOM is ready
-        document.addEventListener('DOMContentLoaded', handleClientLoad);
-    </script>
+        if (file.type !== 'application/pdf') {
+            alert('Please upload a PDF file.');
+            return;
+        }
+
+        document.getElementById('loadingIndicator').style.display = 'block'; // Show loading message
+
+        authenticateUser().then(function() {
+            loadDriveAPI().then(function() {
+                uploadFileToDrive(file);
+            }).catch(function (error) {
+                console.error('Error loading Drive API:', error);
+                document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
+            });
+        }).catch(function (error) {
+            console.error('Error during authentication:', error);
+            document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
+        });
+    }
+
+    // Upload the file to Google Drive
+    function uploadFileToDrive(file) {
+        const metadata = {
+            'name': file.name,
+            'mimeType': file.type,
+        };
+
+        const accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('file', file);
+
+        fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+            body: form,
+        }).then((res) => res.json())
+        .then(function (file) {
+            createShareableLink(file.id);
+        })
+        .catch(function (error) {
+            document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
+            console.error('Error uploading file:', error);
+            alert('Error uploading file. Please try again.');
+        });
+    }
+
+    // Create a shareable link for the uploaded file
+    function createShareableLink(fileId) {
+        gapi.client.drive.permissions.create({
+            fileId: fileId,
+            requestBody: {
+                role: 'reader',
+                type: 'anyone',
+            }
+        }).then(function () {
+            gapi.client.drive.files.get({
+                fileId: fileId,
+                fields: 'webViewLink, webContentLink'
+            }).then(function (response) {
+                const link = response.result.webViewLink;
+                displayOutput(link);
+            });
+        }).catch(function (error) {
+            console.error("Error creating shareable link:", error);
+            alert("Error creating shareable link. Please try again.");
+        });
+    }
+
+    // Display the output with a link to the uploaded file
+    function displayOutput(link) {
+        document.getElementById('loadingIndicator').style.display = 'none'; // Hide loading message
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = `<p>File successfully uploaded. <a href="${link}" target="_blank">View your file here</a></p>`;
+    }
+
+    // Initialize the API client when the DOM is ready
+    document.addEventListener('DOMContentLoaded', handleClientLoad);
+</script>
+
     <script src="https://apis.google.com/js/api.js"></script>
 
 </body>
